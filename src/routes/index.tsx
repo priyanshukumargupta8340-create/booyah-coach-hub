@@ -436,8 +436,12 @@ function Home() {
                   {c.rank} · {c.langs}
                 </p>
 
-                <button className="mt-3 w-full rounded-md bg-primary py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90">
-                  Book session
+                <button
+                  type="button"
+                  onClick={() => setBookingCoach(c)}
+                  className="mt-3 w-full rounded-md bg-primary py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Book 1-on-1 Session
                 </button>
               </li>
             ))}
@@ -496,6 +500,8 @@ function Home() {
           </div>
         </section>
       </main>
+
+      <BookingModal coach={bookingCoach} onClose={() => setBookingCoach(null)} />
 
       <footer className="border-t border-border bg-surface/60">
         <div className="mx-auto max-w-6xl px-4 py-10">
