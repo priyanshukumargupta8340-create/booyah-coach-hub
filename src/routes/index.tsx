@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import heroSquad from "@/assets/hero-squad.jpg";
+import { BookingModal } from "@/components/booking-modal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -182,6 +183,7 @@ function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const [bookingCoach, setBookingCoach] = useState<Coach | null>(null);
 
   const coaches = useMemo(() => {
     const q = query.trim().toLowerCase();
