@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   BadgeCheck,
@@ -228,12 +228,19 @@ function Home() {
             >
               <User className="h-4 w-4" />
             </button>
-            <button
-              type="button"
+            <Link
+              to="/dashboard"
+              className="hidden rounded-md border border-border px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground sm:block"
+            >
+              Coach Dashboard
+            </Link>
+            <Link
+              to="/auth"
               className="hidden rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 sm:block"
             >
               Log in
-            </button>
+            </Link>
+
             <button
               type="button"
               aria-label="Menu"
@@ -261,13 +268,22 @@ function Home() {
               ))}
             </ul>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <button className="flex items-center justify-center gap-1 rounded-md border border-border px-3 py-2 text-xs font-semibold">
-                <Globe className="h-4 w-4" /> English
-              </button>
-              <button className="rounded-md bg-primary px-3 py-2 text-sm font-bold text-primary-foreground">
+              <Link
+                to="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center justify-center rounded-md border border-border px-3 py-2 text-xs font-semibold"
+              >
+                Coach Dashboard
+              </Link>
+              <Link
+                to="/auth"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-md bg-primary px-3 py-2 text-center text-sm font-bold text-primary-foreground"
+              >
                 Log in
-              </button>
+              </Link>
             </div>
+
           </nav>
         )}
       </header>
