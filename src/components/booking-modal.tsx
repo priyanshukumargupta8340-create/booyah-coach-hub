@@ -66,6 +66,8 @@ export function BookingModal({ coach, onClose }: Props) {
   const [date, setDate] = useState<string | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const next7Days = useMemo(() => {
