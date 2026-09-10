@@ -568,10 +568,11 @@ export function BookingModal({ coach, onClose }: Props) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setDone(true)}
-                  className="ring-glow ml-auto rounded-md bg-primary px-6 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
+                  onClick={confirmBooking}
+                  disabled={saving}
+                  className="ring-glow ml-auto rounded-md bg-primary px-6 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                 >
-                  Confirm &amp; Pay ₹{selectedSession?.inr}
+                  {saving ? "Saving…" : <>Confirm &amp; Pay ₹{selectedSession?.inr}</>}
                 </button>
               )}
             </div>
