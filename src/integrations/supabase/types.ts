@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          created_at: string
+          free_fire_uid: string
+          id: string
+          ign: string
+          selected_date: string
+          session_type: string
+          time_slot: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string
+          free_fire_uid: string
+          id?: string
+          ign: string
+          selected_date: string
+          session_type: string
+          time_slot: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string
+          free_fire_uid?: string
+          id?: string
+          ign?: string
+          selected_date?: string
+          session_type?: string
+          time_slot?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
