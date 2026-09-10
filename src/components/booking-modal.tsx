@@ -13,6 +13,8 @@ import {
   X,
 } from "lucide-react";
 
+import { supabase } from "@/integrations/supabase/client";
+
 export type BookingCoach = {
   name: string;
   handle: string;
@@ -66,6 +68,8 @@ export function BookingModal({ coach, onClose }: Props) {
   const [date, setDate] = useState<string | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const next7Days = useMemo(() => {
@@ -147,6 +151,40 @@ export function BookingModal({ coach, onClose }: Props) {
     setStep((s) => Math.max(s - 1, 0));
   };
 
+  const resetForm = () => {
+    setStep(0);
+    setDone(false);
+    setUid("");
+    setIgn("");
+    setContact("");
+    setSessionType(null);
+    setAreas([]);
+    setDate(null);
+    setSlot(null);
+    setTouched(false);
+    setSaveError(null);
+  };
+
+  const confirmBooking = async () => {
+    if (!selectedSession || !date || !slot || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    const { error } = await supabase.from("bookings").insert({
+      free_fire_uid: uid.trim(),
+      ign: ign.trim(),
+      whatsapp: contact.trim(),
+      session_type: selectedSession.name,
+      selected_date: date,
+      time_slot: slot,
+    });
+    setSaving(false);
+    if (error) {
+      setSaveError("We couldn't save your booking. Please try again.");
+      return;
+    }
+    setDone(true);
+  };
+
   const summaryDate = date
     ? new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
         weekday: "short",
@@ -205,24 +243,16 @@ export function BookingModal({ coach, onClose }: Props) {
             <span className="ring-glow grid h-16 w-16 place-items-center rounded-full bg-primary/15 text-primary">
               <PartyPopper className="h-8 w-8" />
             </span>
-            <h3 className="mt-5 font-display text-3xl">Booking Successful!</h3>
+            <h3 className="mt-5 font-display text-3xl">Booking Confirmed!</h3>
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-              Your {selectedSession?.name} with{" "}
-              <span className="font-semibold text-foreground">{coach.name}</span> is locked in for{" "}
-              <span className="font-semibold text-gold">
-                {summaryDate} · {slot}
-              </span>
-              .
-            </p>
-            <p className="mt-3 rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-xs text-muted-foreground">
-              {coach.name} will reach out on {contact} to confirm your lobby invite.
+              Your coach has received your Free Fire UID and will contact you shortly.
             </p>
             <button
               type="button"
-              onClick={onClose}
+              onClick={resetForm}
               className="mt-6 w-full rounded-md bg-primary py-3 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Done
+              Book Another Session
             </button>
           </div>
         ) : (
@@ -505,6 +535,9 @@ export function BookingModal({ coach, onClose }: Props) {
                   <p className="mt-3 text-[11px] text-muted-foreground">
                     Demo checkout — no real payment is processed.
                   </p>
+                  {saveError && (
+                    <p className="mt-2 text-[11px] font-semibold text-destructive">{saveError}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -535,10 +568,11 @@ export function BookingModal({ coach, onClose }: Props) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setDone(true)}
-                  className="ring-glow ml-auto rounded-md bg-primary px-6 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
+                  onClick={confirmBooking}
+                  disabled={saving}
+                  className="ring-glow ml-auto rounded-md bg-primary px-6 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                 >
-                  Confirm &amp; Pay ₹{selectedSession?.inr}
+                  {saving ? "Saving…" : <>Confirm &amp; Pay ₹{selectedSession?.inr}</>}
                 </button>
               )}
             </div>
