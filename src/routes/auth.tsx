@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Flame, Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -67,15 +66,6 @@ function AuthPage() {
     }
   }
 
-  async function google() {
-    setError(null);
-    try {
-      await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-in failed.");
-    }
-  }
-
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl sm:p-8">
@@ -90,19 +80,7 @@ function AuthPage() {
           Access the dashboard to see incoming bookings in real time.
         </p>
 
-        <button
-          type="button"
-          onClick={google}
-          className="mt-6 w-full rounded-lg border border-border bg-secondary px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-        >
-          Continue with Google
-        </button>
-
-        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-        </div>
-
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
             <label htmlFor="email" className="mb-1 block text-sm font-medium text-foreground">
               Email
