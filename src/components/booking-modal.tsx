@@ -149,6 +149,40 @@ export function BookingModal({ coach, onClose }: Props) {
     setStep((s) => Math.max(s - 1, 0));
   };
 
+  const resetForm = () => {
+    setStep(0);
+    setDone(false);
+    setUid("");
+    setIgn("");
+    setContact("");
+    setSessionType(null);
+    setAreas([]);
+    setDate(null);
+    setSlot(null);
+    setTouched(false);
+    setSaveError(null);
+  };
+
+  const confirmBooking = async () => {
+    if (!selectedSession || !date || !slot || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    const { error } = await supabase.from("bookings").insert({
+      free_fire_uid: uid.trim(),
+      ign: ign.trim(),
+      whatsapp: contact.trim(),
+      session_type: selectedSession.name,
+      selected_date: date,
+      time_slot: slot,
+    });
+    setSaving(false);
+    if (error) {
+      setSaveError("We couldn't save your booking. Please try again.");
+      return;
+    }
+    setDone(true);
+  };
+
   const summaryDate = date
     ? new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
         weekday: "short",
