@@ -535,6 +535,9 @@ export function BookingModal({ coach, onClose }: Props) {
                   <p className="mt-3 text-[11px] text-muted-foreground">
                     Demo checkout — no real payment is processed.
                   </p>
+                  {saveError && (
+                    <p className="mt-2 text-[11px] font-semibold text-destructive">{saveError}</p>
+                  )}
                 </div>
               )}
             </div>
