@@ -22,6 +22,7 @@ export type Database = {
           ign: string
           selected_date: string
           session_type: string
+          status: Database["public"]["Enums"]["booking_status"]
           time_slot: string
           whatsapp: string
         }
@@ -32,6 +33,7 @@ export type Database = {
           ign: string
           selected_date: string
           session_type: string
+          status?: Database["public"]["Enums"]["booking_status"]
           time_slot: string
           whatsapp: string
         }
@@ -42,6 +44,7 @@ export type Database = {
           ign?: string
           selected_date?: string
           session_type?: string
+          status?: Database["public"]["Enums"]["booking_status"]
           time_slot?: string
           whatsapp?: string
         }
@@ -83,6 +86,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      booking_status: "pending" | "confirmed" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -211,6 +215,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      booking_status: ["pending", "confirmed", "completed"],
     },
   },
 } as const
