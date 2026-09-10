@@ -205,24 +205,16 @@ export function BookingModal({ coach, onClose }: Props) {
             <span className="ring-glow grid h-16 w-16 place-items-center rounded-full bg-primary/15 text-primary">
               <PartyPopper className="h-8 w-8" />
             </span>
-            <h3 className="mt-5 font-display text-3xl">Booking Successful!</h3>
+            <h3 className="mt-5 font-display text-3xl">Booking Confirmed!</h3>
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-              Your {selectedSession?.name} with{" "}
-              <span className="font-semibold text-foreground">{coach.name}</span> is locked in for{" "}
-              <span className="font-semibold text-gold">
-                {summaryDate} · {slot}
-              </span>
-              .
-            </p>
-            <p className="mt-3 rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-xs text-muted-foreground">
-              {coach.name} will reach out on {contact} to confirm your lobby invite.
+              Your coach has received your Free Fire UID and will contact you shortly.
             </p>
             <button
               type="button"
-              onClick={onClose}
+              onClick={resetForm}
               className="mt-6 w-full rounded-md bg-primary py-3 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Done
+              Book Another Session
             </button>
           </div>
         ) : (
