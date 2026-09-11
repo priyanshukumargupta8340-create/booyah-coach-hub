@@ -5,9 +5,14 @@ import {
   Check,
   ChevronLeft,
   Clock,
+  CreditCard,
   Flame,
   Gamepad2,
+  Landmark,
+  Loader2,
   PartyPopper,
+  ShieldCheck,
+  Smartphone,
   User,
   Wallet,
   X,
@@ -52,6 +57,12 @@ const TIME_SLOTS = ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:
 
 const STEPS = ["Gamer Info", "Session Type", "Improve", "Schedule", "Summary"] as const;
 
+const PAYMENT_METHODS = [
+  { id: "upi", name: "UPI", detail: "Google Pay / PhonePe / Paytm", icon: Smartphone },
+  { id: "card", name: "Credit / Debit Card", detail: "Visa, Mastercard, RuPay", icon: CreditCard },
+  { id: "netbanking", name: "NetBanking", detail: "All major Indian banks", icon: Landmark },
+] as const;
+
 type Props = {
   coach: BookingCoach | null;
   onClose: () => void;
@@ -60,6 +71,8 @@ type Props = {
 export function BookingModal({ coach, onClose }: Props) {
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
+  const [checkout, setCheckout] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>("upi");
   const [uid, setUid] = useState("");
   const [ign, setIgn] = useState("");
   const [contact, setContact] = useState("");
@@ -91,6 +104,8 @@ export function BookingModal({ coach, onClose }: Props) {
     if (!coach) return;
     setStep(0);
     setDone(false);
+    setCheckout(false);
+    setPaymentMethod("upi");
     setUid("");
     setIgn("");
     setContact("");
@@ -154,6 +169,8 @@ export function BookingModal({ coach, onClose }: Props) {
   const resetForm = () => {
     setStep(0);
     setDone(false);
+    setCheckout(false);
+    setPaymentMethod("upi");
     setUid("");
     setIgn("");
     setContact("");
@@ -165,7 +182,7 @@ export function BookingModal({ coach, onClose }: Props) {
     setSaveError(null);
   };
 
-  const confirmBooking = async () => {
+  const simulatePayment = async () => {
     if (!selectedSession || !date || !slot || saving) return;
     setSaving(true);
     setSaveError(null);
@@ -176,6 +193,7 @@ export function BookingModal({ coach, onClose }: Props) {
       session_type: selectedSession.name,
       selected_date: date,
       time_slot: slot,
+      status: "paid",
     });
     setSaving(false);
     if (error) {
@@ -245,8 +263,12 @@ export function BookingModal({ coach, onClose }: Props) {
             </span>
             <h3 className="mt-5 font-display text-3xl">Booking Confirmed!</h3>
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-              Your coach has received your Free Fire UID and will contact you shortly.
+              Your coach has received your Free Fire UID and will contact you shortly using the WhatsApp or
+              Discord details you provided.
             </p>
+            <div className="mt-5 flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold">
+              <BadgeCheck className="h-4 w-4" /> Payment successful · ₹{selectedSession?.inr}
+            </div>
             <button
               type="button"
               onClick={resetForm}
@@ -255,6 +277,80 @@ export function BookingModal({ coach, onClose }: Props) {
               Book Another Session
             </button>
           </div>
+        ) : checkout ? (
+          <>
+            <div className="border-b border-border px-4 py-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gold">
+                <ShieldCheck className="h-4 w-4" /> Secure checkout
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-5">
+              <h3 className="font-display text-2xl">Complete your payment</h3>
+              <div className="mt-4 rounded-lg border border-border bg-surface-2 p-4">
+                <p className={labelCls}>Order summary</p>
+                <div className="mt-3 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold">{selectedSession?.name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{coach.name} · {summaryDate} · {slot}</p>
+                  </div>
+                  <p className="shrink-0 font-display text-2xl text-gold">₹{selectedSession?.inr}</p>
+                </div>
+              </div>
+
+              <fieldset className="mt-5">
+                <legend className={labelCls}>Payment method</legend>
+                <div className="mt-2 space-y-2">
+                  {PAYMENT_METHODS.map((method) => {
+                    const Icon = method.icon;
+                    const selected = paymentMethod === method.id;
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setPaymentMethod(method.id)}
+                        className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                          selected ? "border-primary bg-primary/10" : "border-border bg-surface-2 hover:border-primary/50"
+                        }`}
+                      >
+                        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-md ${selected ? "bg-primary text-primary-foreground" : "bg-surface text-muted-foreground"}`}>
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-bold">{method.name}</span>
+                          <span className="block text-xs text-muted-foreground">{method.detail}</span>
+                        </span>
+                        <span className={`h-4 w-4 rounded-full border-2 ${selected ? "border-primary bg-primary" : "border-border"}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+              <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5" /> Secure payment simulation · no real charge is made
+              </p>
+              {saveError && <p className="mt-3 text-center text-xs font-semibold text-destructive">{saveError}</p>}
+            </div>
+            <div className="flex items-center gap-2 border-t border-border px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setCheckout(false)}
+                disabled={saving}
+                className="flex items-center gap-1 rounded-md border border-border px-4 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
+              >
+                <ChevronLeft className="h-4 w-4" /> Back
+              </button>
+              <button
+                type="button"
+                onClick={simulatePayment}
+                disabled={saving}
+                className="ring-glow ml-auto rounded-md bg-primary px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+              >
+                {saving ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Processing…</span> : "Simulate Successful Payment"}
+              </button>
+            </div>
+          </>
         ) : (
           <>
             {/* Step indicator */}
@@ -533,11 +629,8 @@ export function BookingModal({ coach, onClose }: Props) {
                     </div>
                   </dl>
                   <p className="mt-3 text-[11px] text-muted-foreground">
-                    Demo checkout — no real payment is processed.
+                    You’ll choose a payment method on the secure checkout screen before the booking is saved.
                   </p>
-                  {saveError && (
-                    <p className="mt-2 text-[11px] font-semibold text-destructive">{saveError}</p>
-                  )}
                 </div>
               )}
             </div>
@@ -568,11 +661,13 @@ export function BookingModal({ coach, onClose }: Props) {
               ) : (
                 <button
                   type="button"
-                  onClick={confirmBooking}
-                  disabled={saving}
+                  onClick={() => {
+                    setSaveError(null);
+                    setCheckout(true);
+                  }}
                   className="ring-glow ml-auto rounded-md bg-primary px-6 py-2.5 text-sm font-bold uppercase tracking-wide text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                 >
-                  {saving ? "Saving…" : <>Confirm &amp; Pay ₹{selectedSession?.inr}</>}
+                  Confirm &amp; Pay ₹{selectedSession?.inr}
                 </button>
               )}
             </div>
