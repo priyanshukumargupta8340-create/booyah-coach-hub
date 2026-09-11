@@ -8,10 +8,11 @@ import type { Database } from "@/integrations/supabase/types";
 type BookingStatus = Database["public"]["Enums"]["booking_status"];
 type Booking = Database["public"]["Tables"]["bookings"]["Row"];
 
-const STATUSES: BookingStatus[] = ["pending", "confirmed", "completed"];
+const STATUSES: BookingStatus[] = ["pending", "paid", "confirmed", "completed"];
 
 const STATUS_STYLES: Record<BookingStatus, string> = {
   pending: "bg-secondary text-muted-foreground border-border",
+  paid: "bg-gold/15 text-gold border-gold/40",
   confirmed: "bg-primary/15 text-primary border-primary/40",
   completed: "bg-accent/20 text-foreground border-accent",
 };

@@ -76,17 +76,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      booking_status: "pending" | "confirmed" | "completed"
+      booking_status: "pending" | "confirmed" | "completed" | "paid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -215,7 +209,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      booking_status: ["pending", "confirmed", "completed"],
+      booking_status: ["pending", "confirmed", "completed", "paid"],
     },
   },
 } as const
