@@ -13,6 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ApiAiCoachRouteImport } from './routes/api/ai-coach'
+import { Route as AuthenticatedAiCoachIndexRouteImport } from './routes/_authenticated/ai-coach.index'
+import { Route as AuthenticatedAiCoachThreadIdRouteImport } from './routes/_authenticated/ai-coach.$threadId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,16 +36,39 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiAiCoachRoute = ApiAiCoachRouteImport.update({
+  id: '/api/ai-coach',
+  path: '/api/ai-coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAiCoachIndexRoute =
+  AuthenticatedAiCoachIndexRouteImport.update({
+    id: '/ai-coach/',
+    path: '/ai-coach/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAiCoachThreadIdRoute =
+  AuthenticatedAiCoachThreadIdRouteImport.update({
+    id: '/ai-coach/$threadId',
+    path: '/ai-coach/$threadId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/ai-coach': typeof ApiAiCoachRoute
+  '/ai-coach/$threadId': typeof AuthenticatedAiCoachThreadIdRoute
+  '/ai-coach/': typeof AuthenticatedAiCoachIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/ai-coach': typeof ApiAiCoachRoute
+  '/ai-coach/$threadId': typeof AuthenticatedAiCoachThreadIdRoute
+  '/ai-coach': typeof AuthenticatedAiCoachIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,20 +76,43 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/ai-coach': typeof ApiAiCoachRoute
+  '/_authenticated/ai-coach/$threadId': typeof AuthenticatedAiCoachThreadIdRoute
+  '/_authenticated/ai-coach/': typeof AuthenticatedAiCoachIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/api/ai-coach'
+    | '/ai-coach/$threadId'
+    | '/ai-coach/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/api/ai-coach'
+    | '/ai-coach/$threadId'
+    | '/ai-coach'
   id:
-    '__root__' | '/' | '/_authenticated' | '/auth' | '/_authenticated/dashboard'
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/dashboard'
+    | '/api/ai-coach'
+    | '/_authenticated/ai-coach/$threadId'
+    | '/_authenticated/ai-coach/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiAiCoachRoute: typeof ApiAiCoachRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -96,15 +145,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/ai-coach': {
+      id: '/api/ai-coach'
+      path: '/api/ai-coach'
+      fullPath: '/api/ai-coach'
+      preLoaderRoute: typeof ApiAiCoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/ai-coach/': {
+      id: '/_authenticated/ai-coach/'
+      path: '/ai-coach'
+      fullPath: '/ai-coach/'
+      preLoaderRoute: typeof AuthenticatedAiCoachIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-coach/$threadId': {
+      id: '/_authenticated/ai-coach/$threadId'
+      path: '/ai-coach/$threadId'
+      fullPath: '/ai-coach/$threadId'
+      preLoaderRoute: typeof AuthenticatedAiCoachThreadIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedAiCoachThreadIdRoute: typeof AuthenticatedAiCoachThreadIdRoute
+  AuthenticatedAiCoachIndexRoute: typeof AuthenticatedAiCoachIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedAiCoachThreadIdRoute: AuthenticatedAiCoachThreadIdRoute,
+  AuthenticatedAiCoachIndexRoute: AuthenticatedAiCoachIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -114,6 +188,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiAiCoachRoute: ApiAiCoachRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
