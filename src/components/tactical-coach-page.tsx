@@ -253,16 +253,7 @@ function CoachChat({
     messages: initialMessages,
     transport,
     onError: (chatError) => onError(chatError.message),
-    onFinish: ({ message, isError }) => {
-      if (isError) return;
-      void supabase
-        .from("ai_coach_messages")
-        .insert({ thread_id: threadId, role: "assistant", parts: toJson(message.parts) })
-        .then(({ error }) => {
-          if (error) onError(error.message);
-          void onThreadChange();
-        });
-    },
+    onFinish: () => void onThreadChange(),
   });
 
   useEffect(() => {

@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 type ChatBody = {
   threadId?: unknown;
@@ -16,6 +16,10 @@ Coach like an experienced IGL: decisive, practical, motivating, and concise. Giv
 
 function gatewayErrorResponse(status: number, message: string) {
   return Response.json({ error: message }, { status });
+}
+
+function toJson(parts: UIMessage["parts"]): Json {
+  return JSON.parse(JSON.stringify(parts)) as Json;
 }
 
 export const Route = createFileRoute("/api/ai-coach")({
@@ -82,6 +86,16 @@ export const Route = createFileRoute("/api/ai-coach")({
           const response = result.toUIMessageStreamResponse({
             originalMessages: body.messages as UIMessage[],
             sendReasoning: true,
+            onFinish: async ({ responseMessage, outcome }) => {
+              if (outcome.status !== "completed") return;
+              const { error: saveError } = await supabase.from("ai_coach_messages").insert({
+                thread_id: body.threadId as string,
+                user_id: userId,
+                role: "assistant",
+                parts: toJson(responseMessage.parts),
+              });
+              if (saveError) throw saveError;
+            },
           });
           const headers = new Headers(response.headers);
           const runId = getRunId();
