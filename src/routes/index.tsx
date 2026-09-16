@@ -229,6 +229,12 @@ function Home() {
               <User className="h-4 w-4" />
             </button>
             <Link
+              to="/ai-coach"
+              className="hidden rounded-md border border-gold/40 px-3 py-2 text-sm font-semibold text-gold transition-colors hover:border-gold hover:text-foreground sm:block"
+            >
+              AI Tactical Coach
+            </Link>
+            <Link
               to="/dashboard"
               className="hidden rounded-md border border-border px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground sm:block"
             >
@@ -268,6 +274,13 @@ function Home() {
               ))}
             </ul>
             <div className="mt-3 grid grid-cols-2 gap-2">
+              <Link
+                to="/ai-coach"
+                onClick={() => setMenuOpen(false)}
+                className="col-span-2 rounded-md border border-gold/40 px-3 py-2 text-center text-sm font-bold text-gold"
+              >
+                AI Tactical Coach
+              </Link>
               <Link
                 to="/dashboard"
                 onClick={() => setMenuOpen(false)}
