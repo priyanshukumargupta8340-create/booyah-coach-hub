@@ -294,7 +294,7 @@ function Home() {
               {["Find coaches", "Categories", "Become a coach", "Pricing"].map((item) => (
                 <li key={item}>
                   <a
-                    href="#coaches"
+                    href={item === "Become a coach" ? "/become-coach" : "#coaches"}
                     onClick={() => setMenuOpen(false)}
                     className="block rounded-md px-2 py-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
                   >
@@ -362,12 +362,12 @@ function Home() {
               >
                 Find your coach
               </a>
-              <a
-                href="#categories"
+              <Link
+                to="/become-coach"
                 className="rounded-md border border-gold/50 px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold transition-colors hover:bg-gold/10"
               >
                 Become a coach
-              </a>
+              </Link>
             </div>
 
             <dl className="mt-10 grid grid-cols-3 gap-3">
@@ -483,11 +483,11 @@ function Home() {
                   </div>
                   <div>
                     <dt className="text-[10px] uppercase text-muted-foreground">Headshot</dt>
-                    <dd className="text-sm font-bold">{c.headshot}%</dd>
+                    <dd className="text-sm font-bold">{c.isNew ? "—" : `${c.headshot}%`}</dd>
                   </div>
                   <div>
                     <dt className="text-[10px] uppercase text-muted-foreground">Reviews</dt>
-                    <dd className="text-sm font-bold">{c.reviews}</dd>
+                    <dd className="text-sm font-bold">{c.isNew ? "New" : c.reviews}</dd>
                   </div>
                 </dl>
 
