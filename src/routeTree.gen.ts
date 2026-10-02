@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedBecomeCoachRouteImport } from './routes/_authenticated/become-coach'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiAiCoachRouteImport } from './routes/api/ai-coach'
 import { Route as AuthenticatedAiCoachIndexRouteImport } from './routes/_authenticated/ai-coach.index'
@@ -31,6 +32,12 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedBecomeCoachRoute =
+  AuthenticatedBecomeCoachRouteImport.update({
+    id: '/become-coach',
+    path: '/become-coach',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -57,6 +64,7 @@ const AuthenticatedAiCoachThreadIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/become-coach': typeof AuthenticatedBecomeCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/ai-coach': typeof ApiAiCoachRoute
   '/ai-coach/$threadId': typeof AuthenticatedAiCoachThreadIdRoute
@@ -65,6 +73,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/become-coach': typeof AuthenticatedBecomeCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/ai-coach': typeof ApiAiCoachRoute
   '/ai-coach/$threadId': typeof AuthenticatedAiCoachThreadIdRoute
@@ -75,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/become-coach': typeof AuthenticatedBecomeCoachRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/ai-coach': typeof ApiAiCoachRoute
   '/_authenticated/ai-coach/$threadId': typeof AuthenticatedAiCoachThreadIdRoute
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/become-coach'
     | '/dashboard'
     | '/api/ai-coach'
     | '/ai-coach/$threadId'
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/become-coach'
     | '/dashboard'
     | '/api/ai-coach'
     | '/ai-coach/$threadId'
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/become-coach'
     | '/_authenticated/dashboard'
     | '/api/ai-coach'
     | '/_authenticated/ai-coach/$threadId'
@@ -138,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/become-coach': {
+      id: '/_authenticated/become-coach'
+      path: '/become-coach'
+      fullPath: '/become-coach'
+      preLoaderRoute: typeof AuthenticatedBecomeCoachRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -170,12 +190,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBecomeCoachRoute: typeof AuthenticatedBecomeCoachRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedAiCoachThreadIdRoute: typeof AuthenticatedAiCoachThreadIdRoute
   AuthenticatedAiCoachIndexRoute: typeof AuthenticatedAiCoachIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBecomeCoachRoute: AuthenticatedBecomeCoachRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedAiCoachThreadIdRoute: AuthenticatedAiCoachThreadIdRoute,
   AuthenticatedAiCoachIndexRoute: AuthenticatedAiCoachIndexRoute,

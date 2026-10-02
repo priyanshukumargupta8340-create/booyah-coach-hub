@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CalendarDays, Flame, Loader2, LogOut, RefreshCw, ShieldAlert } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { CoachApplications } from "@/components/coach-applications";
 import type { Database } from "@/integrations/supabase/types";
 
 type BookingStatus = Database["public"]["Enums"]["booking_status"];
@@ -223,6 +224,7 @@ function DashboardPage() {
             </div>
           </>
         )}
+        {!isPermissionError && <CoachApplications />}
       </section>
     </main>
   );
