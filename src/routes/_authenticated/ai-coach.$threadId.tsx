@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/ai-coach/$threadId")({
     <main className="grid min-h-screen place-items-center bg-background px-4 text-foreground">
       <div className="max-w-lg text-center">
         <h1 className="font-display text-4xl">Tactical feed interrupted</h1>
-        <p className="mt-3 text-sm text-muted-foreground">{error.message || "The coach screen could not load."}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{(error instanceof Error && error.message) || "The coach screen could not load."}</p>
       </div>
     </main>
   ),
