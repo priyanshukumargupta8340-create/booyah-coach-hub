@@ -109,6 +109,60 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_profiles: {
+        Row: {
+          bio: string
+          created_at: string
+          display_name: string
+          free_fire_uid: string
+          handle: string
+          id: string
+          languages: string
+          price: number
+          proof_path: string
+          rank: string
+          region: string
+          specialties: string[]
+          status: Database["public"]["Enums"]["coach_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio: string
+          created_at?: string
+          display_name: string
+          free_fire_uid: string
+          handle: string
+          id?: string
+          languages: string
+          price: number
+          proof_path: string
+          rank: string
+          region: string
+          specialties?: string[]
+          status?: Database["public"]["Enums"]["coach_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          bio?: string
+          created_at?: string
+          display_name?: string
+          free_fire_uid?: string
+          handle?: string
+          id?: string
+          languages?: string
+          price?: number
+          proof_path?: string
+          rank?: string
+          region?: string
+          specialties?: string[]
+          status?: Database["public"]["Enums"]["coach_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -140,6 +194,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       booking_status: "pending" | "confirmed" | "completed" | "paid"
+      coach_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -269,6 +324,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       booking_status: ["pending", "confirmed", "completed", "paid"],
+      coach_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
