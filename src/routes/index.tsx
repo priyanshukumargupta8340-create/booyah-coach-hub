@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   BadgeCheck,
   ChevronDown,
@@ -88,6 +89,7 @@ type Coach = {
   headshot: number;
   blurb: string;
   live?: boolean;
+  isNew?: boolean;
 };
 
 const COACHES: Coach[] = [
@@ -184,10 +186,38 @@ function Home() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const [bookingCoach, setBookingCoach] = useState<Coach | null>(null);
+  const [realCoaches, setRealCoaches] = useState<Coach[]>([]);
+
+  useEffect(() => {
+    void supabase
+      .from("coach_profiles")
+      .select("display_name, handle, rank, region, languages, price, specialties, bio")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setRealCoaches(
+          (data ?? []).map((c) => ({
+            name: c.display_name,
+            handle: c.handle,
+            initials: c.display_name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+            rank: c.rank,
+            region: c.region,
+            langs: c.languages,
+            rating: 5.0,
+            reviews: 0,
+            price: c.price,
+            tags: c.specialties,
+            headshot: 0,
+            blurb: c.bio,
+            isNew: true,
+          })),
+        );
+      });
+  }, []);
 
   const coaches = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return COACHES.filter((c) => {
+    return [...realCoaches, ...COACHES].filter((c) => {
       const matchesFilter = filter === "All" || c.tags.includes(filter);
       const matchesQuery =
         !q ||
@@ -197,7 +227,7 @@ function Home() {
           .includes(q);
       return matchesFilter && matchesQuery;
     });
-  }, [query, filter]);
+  }, [query, filter, realCoaches]);
 
   return (
     <div className="min-h-screen bg-background">
