@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { BadgeCheck, Clock, Flame, Loader2, Upload, XCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { TIME_SLOTS } from "@/components/booking-modal";
+
+const WEEKDAYS = [["1", "Mon"], ["2", "Tue"], ["3", "Wed"], ["4", "Thu"], ["5", "Fri"], ["6", "Sat"], ["0", "Sun"]] as const;
 import type { Database } from "@/integrations/supabase/types";
 
 type CoachProfile = Database["public"]["Tables"]["coach_profiles"]["Row"];
@@ -45,6 +48,7 @@ function BecomeCoachPage() {
     price: "199",
     bio: "",
     specialties: [] as string[],
+    availability: Object.fromEntries(["0", "1", "2", "3", "4", "5", "6"].map((d) => [d, [...TIME_SLOTS]])) as Record<string, string[]>,
   });
 
   useEffect(() => {
@@ -56,7 +60,7 @@ function BecomeCoachPage() {
       .then(({ data }) => {
         if (data) {
           setExisting(data);
-          setForm({ ...data, price: String(data.price) });
+          setForm({ ...data, price: String(data.price), availability: (data.availability ?? {}) as Record<string, string[]> });
         }
         setLoading(false);
       });
@@ -72,6 +76,7 @@ function BecomeCoachPage() {
     if (form.specialties.length === 0) return setError("Pick at least one specialty.");
     const price = Number(form.price);
     if (!Number.isInteger(price) || price < 49 || price > 5000) return setError("Price must be between ₹49 and ₹5000.");
+    if (!Object.values(form.availability).some((v) => v.length > 0)) return setError("Open at least one time slot in your weekly availability.");
     if (!file && !existing) return setError("Upload a screenshot of your rank as proof.");
     if (file && (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024))
       return setError("Rank proof must be an image under 5 MB.");
@@ -97,6 +102,7 @@ function BecomeCoachPage() {
       price,
       bio: form.bio.trim(),
       specialties: form.specialties,
+      availability: form.availability,
       proof_path,
     };
     const { data, error: dbErr } = existing
@@ -176,6 +182,32 @@ function BecomeCoachPage() {
                     </button>
                   );
                 })}
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">Weekly availability</legend>
+              <p className="mb-2 text-xs text-muted-foreground">Tap slots to toggle. Players can only book the slots you leave open.</p>
+              <div className="space-y-1.5 overflow-x-auto">
+                {WEEKDAYS.map(([d, label]) => (
+                  <div key={d} className="flex items-center gap-1.5">
+                    <span className="w-9 shrink-0 text-xs font-bold uppercase text-muted-foreground">{label}</span>
+                    {TIME_SLOTS.map((t) => {
+                      const on = (form.availability[d] ?? []).includes(t);
+                      return (
+                        <button type="button" key={t} aria-pressed={on} aria-label={`${label} ${t}`}
+                          onClick={() => setForm((f) => {
+                            const cur = f.availability[d] ?? [];
+                            const nextDay = on ? cur.filter((x) => x !== t) : TIME_SLOTS.filter((x) => x === t || cur.includes(x));
+                            return { ...f, availability: { ...f.availability, [d]: nextDay } };
+                          })}
+                          className={`min-w-14 rounded border px-1.5 py-1 text-[10px] font-bold ${on ? "border-gold bg-gold/15 text-gold" : "border-border text-muted-foreground/60 line-through"}`}>
+                          {t.replace(":00", "")}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </fieldset>
 

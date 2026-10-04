@@ -90,6 +90,7 @@ type Coach = {
   blurb: string;
   live?: boolean;
   isNew?: boolean;
+  availability?: Record<string, string[]> | null;
 };
 
 const COACHES: Coach[] = [
