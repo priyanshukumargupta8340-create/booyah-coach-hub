@@ -26,6 +26,8 @@ export type BookingCoach = {
   initials: string;
   rank: string;
   price: number;
+  /** Weekday ("0"=Sun) -> available slots. Omit for every slot. */
+  availability?: Record<string, string[]> | null;
 };
 
 const SESSION_TYPES = [
@@ -53,7 +55,7 @@ const IMPROVEMENT_AREAS = [
   "IGL & Team Communication",
 ] as const;
 
-const TIME_SLOTS = ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM"] as const;
+export const TIME_SLOTS = ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM"] as const;
 
 const STEPS = ["Gamer Info", "Session Type", "Improve", "Schedule", "Summary"] as const;
 
@@ -83,16 +85,20 @@ export function BookingModal({ coach, onClose }: Props) {
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [booked, setBooked] = useState<Set<string>>(new Set());
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotTaken, setSlotTaken] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const next7Days = useMemo(() => {
-    const days: { value: string; day: string; date: string }[] = [];
+    const days: { value: string; dow: string; day: string; date: string }[] = [];
     const now = new Date();
     for (let i = 1; i <= 7; i++) {
       const d = new Date(now);
       d.setDate(now.getDate() + i);
       days.push({
-        value: d.toISOString().slice(0, 10),
+        value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+        dow: String(d.getDay()),
         day: d.toLocaleDateString("en-US", { weekday: "short" }),
         date: d.toLocaleDateString("en-US", { day: "numeric", month: "short" }),
       });
@@ -116,6 +122,22 @@ export function BookingModal({ coach, onClose }: Props) {
     setTouched(false);
   }, [coach]);
 
+  const loadBooked = useCallback(async () => {
+    if (!coach) return;
+    setSlotsLoading(true);
+    const { data } = await supabase.rpc("get_booked_slots", {
+      _coach: coach.handle,
+      _from: next7Days[0]!.value,
+      _to: next7Days[next7Days.length - 1]!.value,
+    });
+    setBooked(new Set((data ?? []).map((r) => `${r.selected_date}|${r.time_slot}`)));
+    setSlotsLoading(false);
+  }, [coach, next7Days]);
+
+  useEffect(() => {
+    if (coach && step === 3) void loadBooked();
+  }, [coach, step, loadBooked]);
+
   useEffect(() => {
     if (!coach) return;
     const onKey = (e: KeyboardEvent) => {
@@ -132,13 +154,18 @@ export function BookingModal({ coach, onClose }: Props) {
 
   if (!coach) return null;
 
+  const isOffered = (dow: string, t: string) => !coach.availability || (coach.availability[dow] ?? []).includes(t);
+  const isOpen = (d: { value: string; dow: string }, t: string) => isOffered(d.dow, t) && !booked.has(`${d.value}|${t}`);
+  const dayHasOpen = (d: { value: string; dow: string }) => TIME_SLOTS.some((t) => isOpen(d, t));
+  const selectedDay = next7Days.find((d) => d.value === date) ?? null;
+
   const selectedSession = SESSION_TYPES.find((s) => s.id === sessionType) ?? null;
 
   const stepValid = [
     /^\d{8,12}$/.test(uid.trim()) && ign.trim().length >= 3 && contact.trim().length >= 5,
     sessionType !== null,
     areas.length > 0,
-    date !== null && slot !== null,
+    selectedDay !== null && slot !== null && isOpen(selectedDay, slot),
     true,
   ][step];
 
@@ -186,7 +213,9 @@ export function BookingModal({ coach, onClose }: Props) {
     if (!selectedSession || !date || !slot || saving) return;
     setSaving(true);
     setSaveError(null);
+    setSlotTaken(false);
     const { error } = await supabase.from("bookings").insert({
+      coach_handle: coach.handle,
       free_fire_uid: uid.trim(),
       ign: ign.trim(),
       whatsapp: contact.trim(),
@@ -197,6 +226,14 @@ export function BookingModal({ coach, onClose }: Props) {
     });
     setSaving(false);
     if (error) {
+      if (error.code === "23505" || error.code === "P0001") {
+        setSlotTaken(true);
+        setSlot(null);
+        setCheckout(false);
+        setStep(3);
+        void loadBooked();
+        return;
+      }
       setSaveError("We couldn't save your booking. Please try again.");
       return;
     }
@@ -539,14 +576,22 @@ export function BookingModal({ coach, onClose }: Props) {
                   </p>
                   <p className={`${labelCls} mt-4`}>Date (next 7 days)</p>
                   <div className="grid grid-cols-4 gap-2 sm:grid-cols-7" role="radiogroup" aria-label="Date">
-                    {next7Days.map((d) => (
+                    {next7Days.map((d) => {
+                      const full = !slotsLoading && !dayHasOpen(d);
+                      return (
                       <button
                         key={d.value}
                         type="button"
                         role="radio"
                         aria-checked={date === d.value}
-                        onClick={() => setDate(d.value)}
-                        className={`rounded-lg border px-1 py-2 text-center transition-colors ${
+                        disabled={full}
+                        aria-label={full ? `${d.day} ${d.date}, fully booked` : undefined}
+                        onClick={() => {
+                          setDate(d.value);
+                          setSlotTaken(false);
+                          if (slot && !isOpen(d, slot)) setSlot(null);
+                        }}
+                        className={`rounded-lg border px-1 py-2 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-35 disabled:line-through ${
                           date === d.value
                             ? "border-primary bg-primary text-primary-foreground"
                             : "border-border bg-surface-2 hover:border-primary/50"
@@ -555,28 +600,51 @@ export function BookingModal({ coach, onClose }: Props) {
                         <span className="block text-[10px] font-bold uppercase">{d.day}</span>
                         <span className="block text-xs">{d.date}</span>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                   <p className={`${labelCls} mt-5`}>Time slot</p>
                   <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Time slot">
-                    {TIME_SLOTS.map((t) => (
+                    {TIME_SLOTS.map((t) => {
+                      const offered = selectedDay ? isOffered(selectedDay.dow, t) : true;
+                      const taken = selectedDay ? booked.has(`${selectedDay.value}|${t}`) : false;
+                      const blocked = !selectedDay || slotsLoading || !offered || taken;
+                      return (
                       <button
                         key={t}
                         type="button"
                         role="radio"
                         aria-checked={slot === t}
-                        onClick={() => setSlot(t)}
-                        className={`flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 text-xs font-bold transition-colors ${
+                        disabled={blocked}
+                        title={taken ? "Already booked" : !offered ? "Coach unavailable" : undefined}
+                        aria-label={taken ? `${t}, already booked` : !offered && selectedDay ? `${t}, coach unavailable` : t}
+                        onClick={() => {
+                          setSlot(t);
+                          setSlotTaken(false);
+                        }}
+                        className={`flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${taken ? "disabled:line-through" : ""} ${
                           slot === t
                             ? "border-primary bg-primary text-primary-foreground"
                             : "border-border bg-surface-2 hover:border-primary/50"
                         }`}
                       >
                         <Clock className="h-3.5 w-3.5" />
-                        {t}
+                        {taken ? "Booked" : t}
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
+                  {!selectedDay && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">Pick a date to see open slots.</p>
+                  )}
+                  {slotsLoading && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">Checking coach availability…</p>
+                  )}
+                  {slotTaken && (
+                    <div role="alert" className="mt-3 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-xs font-semibold text-destructive">
+                      That slot was just booked by another player. You haven't been charged — please pick another time.
+                    </div>
+                  )}
                   {touched && (!date || !slot) && (
                     <p className="mt-2 text-[11px] font-semibold text-destructive">
                       Pick a date and a time slot.
