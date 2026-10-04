@@ -90,6 +90,7 @@ type Coach = {
   blurb: string;
   live?: boolean;
   isNew?: boolean;
+  availability?: Record<string, string[]> | null;
 };
 
 const COACHES: Coach[] = [
@@ -191,7 +192,7 @@ function Home() {
   useEffect(() => {
     void supabase
       .from("coach_profiles")
-      .select("display_name, handle, rank, region, languages, price, specialties, bio")
+      .select("display_name, handle, rank, region, languages, price, specialties, bio, availability")
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
@@ -210,6 +211,7 @@ function Home() {
             headshot: 0,
             blurb: c.bio,
             isNew: true,
+            availability: (c.availability ?? null) as Record<string, string[]> | null,
           })),
         );
       });

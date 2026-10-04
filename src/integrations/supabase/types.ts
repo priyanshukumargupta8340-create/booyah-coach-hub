@@ -75,6 +75,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          coach_handle: string | null
           created_at: string
           free_fire_uid: string
           id: string
@@ -86,6 +87,7 @@ export type Database = {
           whatsapp: string
         }
         Insert: {
+          coach_handle?: string | null
           created_at?: string
           free_fire_uid: string
           id?: string
@@ -97,6 +99,7 @@ export type Database = {
           whatsapp: string
         }
         Update: {
+          coach_handle?: string | null
           created_at?: string
           free_fire_uid?: string
           id?: string
@@ -111,6 +114,7 @@ export type Database = {
       }
       coach_profiles: {
         Row: {
+          availability: Json
           bio: string
           created_at: string
           display_name: string
@@ -128,6 +132,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          availability?: Json
           bio: string
           created_at?: string
           display_name: string
@@ -145,6 +150,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          availability?: Json
           bio?: string
           created_at?: string
           display_name?: string
@@ -189,7 +195,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_booked_slots: {
+        Args: { _coach: string; _from: string; _to: string }
+        Returns: {
+          selected_date: string
+          time_slot: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
