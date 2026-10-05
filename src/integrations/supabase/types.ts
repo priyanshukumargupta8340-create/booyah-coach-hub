@@ -75,39 +75,48 @@ export type Database = {
       }
       bookings: {
         Row: {
+          amount: number | null
           coach_handle: string | null
           created_at: string
           free_fire_uid: string
           id: string
           ign: string
+          meeting_link: string | null
           selected_date: string
           session_type: string
           status: Database["public"]["Enums"]["booking_status"]
           time_slot: string
+          user_id: string | null
           whatsapp: string
         }
         Insert: {
+          amount?: number | null
           coach_handle?: string | null
           created_at?: string
           free_fire_uid: string
           id?: string
           ign: string
+          meeting_link?: string | null
           selected_date: string
           session_type: string
           status?: Database["public"]["Enums"]["booking_status"]
           time_slot: string
+          user_id?: string | null
           whatsapp: string
         }
         Update: {
+          amount?: number | null
           coach_handle?: string | null
           created_at?: string
           free_fire_uid?: string
           id?: string
           ign?: string
+          meeting_link?: string | null
           selected_date?: string
           session_type?: string
           status?: Database["public"]["Enums"]["booking_status"]
           time_slot?: string
+          user_id?: string | null
           whatsapp?: string
         }
         Relationships: []
@@ -126,6 +135,7 @@ export type Database = {
           proof_path: string
           rank: string
           region: string
+          session_prices: Json
           specialties: string[]
           status: Database["public"]["Enums"]["coach_status"]
           updated_at: string
@@ -144,6 +154,7 @@ export type Database = {
           proof_path: string
           rank: string
           region: string
+          session_prices?: Json
           specialties?: string[]
           status?: Database["public"]["Enums"]["coach_status"]
           updated_at?: string
@@ -162,6 +173,7 @@ export type Database = {
           proof_path?: string
           rank?: string
           region?: string
+          session_prices?: Json
           specialties?: string[]
           status?: Database["public"]["Enums"]["coach_status"]
           updated_at?: string
