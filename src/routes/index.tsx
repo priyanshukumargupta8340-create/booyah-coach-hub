@@ -269,6 +269,12 @@ function Home() {
               AI Tactical Coach
             </Link>
             <Link
+              to="/my-sessions"
+              className="hidden rounded-md border border-border px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground sm:block"
+            >
+              My Sessions
+            </Link>
+            <Link
               to="/dashboard"
               className="hidden rounded-md border border-border px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground sm:block"
             >
@@ -314,6 +320,13 @@ function Home() {
                 className="col-span-2 rounded-md border border-gold/40 px-3 py-2 text-center text-sm font-bold text-gold"
               >
                 AI Tactical Coach
+              </Link>
+              <Link
+                to="/my-sessions"
+                onClick={() => setMenuOpen(false)}
+                className="col-span-2 rounded-md border border-border px-3 py-2 text-center text-sm font-semibold"
+              >
+                My Sessions
               </Link>
               <Link
                 to="/dashboard"
