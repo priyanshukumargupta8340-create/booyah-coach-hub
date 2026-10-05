@@ -28,24 +28,20 @@ export type BookingCoach = {
   price: number;
   /** Weekday ("0"=Sun) -> available slots. Omit for every slot. */
   availability?: Record<string, string[]> | null;
+  sessionPrices?: SessionPrices | null;
 };
 
-const SESSION_TYPES = [
-  {
-    id: "live",
-    name: "1-on-1 Live Session",
-    desc: "60 min live coaching in a custom room with voice.",
-    inr: 499,
-    usd: 6,
-  },
-  {
-    id: "vod",
-    name: "VOD Review Session",
-    desc: "45 min recorded gameplay breakdown with written notes.",
-    inr: 299,
-    usd: 4,
-  },
+export const SESSION_TYPES = [
+  { id: "vod", name: "VOD Review", desc: "Recorded gameplay breakdown with written notes." },
+  { id: "scrim", name: "Live Scrim Coaching", desc: "Coach joins your custom room and calls plays live on voice." },
+  { id: "aim", name: "1v1 Aim & Movement", desc: "Head-to-head drills for one-taps, crouch spam and gloo timing." },
 ] as const;
+
+export type SessionPrices = Record<(typeof SESSION_TYPES)[number]["id"], number>;
+
+export function defaultSessionPrices(base: number): SessionPrices {
+  return { vod: Math.round(base * 0.7), scrim: Math.round(base * 1.3), aim: base };
+}
 
 const IMPROVEMENT_AREAS = [
   "Aim & Headshot Accuracy",
@@ -159,7 +155,9 @@ export function BookingModal({ coach, onClose }: Props) {
   const dayHasOpen = (d: { value: string; dow: string }) => TIME_SLOTS.some((t) => isOpen(d, t));
   const selectedDay = next7Days.find((d) => d.value === date) ?? null;
 
-  const selectedSession = SESSION_TYPES.find((s) => s.id === sessionType) ?? null;
+  const prices = { ...defaultSessionPrices(coach.price), ...(coach.sessionPrices ?? {}) };
+  const sessions = SESSION_TYPES.map((s) => ({ ...s, inr: prices[s.id], usd: Math.max(1, Math.round(prices[s.id] / 85)) }));
+  const selectedSession = sessions.find((s) => s.id === sessionType) ?? null;
 
   const stepValid = [
     /^\d{8,12}$/.test(uid.trim()) && ign.trim().length >= 3 && contact.trim().length >= 5,
@@ -222,6 +220,7 @@ export function BookingModal({ coach, onClose }: Props) {
       session_type: selectedSession.name,
       selected_date: date,
       time_slot: slot,
+      amount: selectedSession.inr,
       status: "paid",
     });
     setSaving(false);
@@ -484,7 +483,7 @@ export function BookingModal({ coach, onClose }: Props) {
                     <Wallet className="h-5 w-5 text-primary" /> Pick your session
                   </h3>
                   <div className="mt-4 space-y-3" role="radiogroup" aria-label="Session type">
-                    {SESSION_TYPES.map((s) => (
+                    {sessions.map((s) => (
                       <button
                         key={s.id}
                         type="button"
