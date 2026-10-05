@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { BadgeCheck, Clock, Flame, Loader2, Upload, XCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { TIME_SLOTS } from "@/components/booking-modal";
+import { SESSION_TYPES, TIME_SLOTS, type SessionPrices } from "@/components/booking-modal";
 
 const WEEKDAYS = [["1", "Mon"], ["2", "Tue"], ["3", "Wed"], ["4", "Thu"], ["5", "Fri"], ["6", "Sat"], ["0", "Sun"]] as const;
 import type { Database } from "@/integrations/supabase/types";
@@ -46,6 +46,7 @@ function BecomeCoachPage() {
     region: "India",
     languages: "Hindi, English",
     price: "199",
+    session_prices: { vod: "199", scrim: "399", aim: "299" } as Record<keyof SessionPrices, string>,
     bio: "",
     specialties: [] as string[],
     availability: Object.fromEntries(["0", "1", "2", "3", "4", "5", "6"].map((d) => [d, [...TIME_SLOTS]])) as Record<string, string[]>,
@@ -60,7 +61,8 @@ function BecomeCoachPage() {
       .then(({ data }) => {
         if (data) {
           setExisting(data);
-          setForm({ ...data, price: String(data.price), availability: (data.availability ?? {}) as Record<string, string[]> });
+          const sp = (data.session_prices ?? {}) as Partial<SessionPrices>;
+          setForm({ ...data, price: String(data.price), session_prices: { vod: String(sp.vod ?? 199), scrim: String(sp.scrim ?? 399), aim: String(sp.aim ?? 299) }, availability: (data.availability ?? {}) as Record<string, string[]> });
         }
         setLoading(false);
       });
@@ -74,8 +76,10 @@ function BecomeCoachPage() {
     setError(null);
     if (!/^\d{6,12}$/.test(form.free_fire_uid)) return setError("Free Fire UID must be 6–12 digits.");
     if (form.specialties.length === 0) return setError("Pick at least one specialty.");
-    const price = Number(form.price);
-    if (!Number.isInteger(price) || price < 49 || price > 5000) return setError("Price must be between ₹49 and ₹5000.");
+    const session_prices = Object.fromEntries(SESSION_TYPES.map((t) => [t.id, Number(form.session_prices[t.id])])) as SessionPrices;
+    if (Object.values(session_prices).some((v) => !Number.isInteger(v) || v < 49 || v > 5000))
+      return setError("Each session price must be between ₹49 and ₹5000.");
+    const price = Math.min(...Object.values(session_prices));
     if (!Object.values(form.availability).some((v) => v.length > 0)) return setError("Open at least one time slot in your weekly availability.");
     if (!file && !existing) return setError("Upload a screenshot of your rank as proof.");
     if (file && (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024))
@@ -100,6 +104,7 @@ function BecomeCoachPage() {
       region: form.region.trim(),
       languages: form.languages.trim(),
       price,
+      session_prices,
       bio: form.bio.trim(),
       specialties: form.specialties,
       availability: form.availability,
@@ -164,10 +169,19 @@ function BecomeCoachPage() {
               <Field label="Languages">
                 <input required maxLength={80} className={input} value={form.languages} onChange={set("languages")} />
               </Field>
-              <Field label="Price per session (₹)">
-                <input required type="number" min={49} max={5000} className={input} value={form.price} onChange={set("price")} />
-              </Field>
             </div>
+
+            <fieldset>
+              <legend className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Price per session type (₹)</legend>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {SESSION_TYPES.map((t) => (
+                  <Field key={t.id} label={t.name}>
+                    <input required type="number" min={49} max={5000} className={input} value={form.session_prices[t.id]}
+                      onChange={(e) => setForm((f) => ({ ...f, session_prices: { ...f.session_prices, [t.id]: e.target.value } }))} />
+                  </Field>
+                ))}
+              </div>
+            </fieldset>
 
             <fieldset>
               <legend className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Specialties</legend>
@@ -264,10 +278,13 @@ function StatusCard({ profile, onEdit }: { profile: CoachProfile; onEdit: () => 
       <h2 className="mt-3 font-display text-3xl">{meta.title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{meta.copy}</p>
       <p className="mt-4 text-sm">
-        <strong>{profile.display_name}</strong> {profile.handle} · {profile.rank} · ₹{profile.price}/session
+        <strong>{profile.display_name}</strong> {profile.handle} · {profile.rank} · from ₹{profile.price}/session
       </p>
       <div className="mt-5 flex gap-2">
         <button onClick={onEdit} className="rounded-md border border-border px-4 py-2 text-sm font-semibold">Edit profile</button>
+        {profile.status === "approved" && (
+          <Link to="/coach-sessions" className="rounded-md bg-gold px-4 py-2 text-sm font-bold text-background">My bookings</Link>
+        )}
         {profile.status === "approved" && (
           <Link to="/" hash="coaches" className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">View directory</Link>
         )}

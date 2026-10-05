@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import heroSquad from "@/assets/hero-squad.jpg";
-import { BookingModal } from "@/components/booking-modal";
+import { BookingModal, type SessionPrices } from "@/components/booking-modal";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -91,6 +91,7 @@ type Coach = {
   live?: boolean;
   isNew?: boolean;
   availability?: Record<string, string[]> | null;
+  sessionPrices?: SessionPrices | null;
 };
 
 const COACHES: Coach[] = [
@@ -192,7 +193,7 @@ function Home() {
   useEffect(() => {
     void supabase
       .from("coach_profiles")
-      .select("display_name, handle, rank, region, languages, price, specialties, bio, availability")
+      .select("display_name, handle, rank, region, languages, price, specialties, bio, availability, session_prices")
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
@@ -212,6 +213,7 @@ function Home() {
             blurb: c.bio,
             isNew: true,
             availability: (c.availability ?? null) as Record<string, string[]> | null,
+            sessionPrices: (c.session_prices ?? null) as SessionPrices | null,
           })),
         );
       });
@@ -267,6 +269,12 @@ function Home() {
               AI Tactical Coach
             </Link>
             <Link
+              to="/my-sessions"
+              className="hidden rounded-md border border-border px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground sm:block"
+            >
+              My Sessions
+            </Link>
+            <Link
               to="/dashboard"
               className="hidden rounded-md border border-border px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground sm:block"
             >
@@ -312,6 +320,13 @@ function Home() {
                 className="col-span-2 rounded-md border border-gold/40 px-3 py-2 text-center text-sm font-bold text-gold"
               >
                 AI Tactical Coach
+              </Link>
+              <Link
+                to="/my-sessions"
+                onClick={() => setMenuOpen(false)}
+                className="col-span-2 rounded-md border border-border px-3 py-2 text-center text-sm font-semibold"
+              >
+                My Sessions
               </Link>
               <Link
                 to="/dashboard"
