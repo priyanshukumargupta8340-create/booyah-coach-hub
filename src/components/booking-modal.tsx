@@ -312,6 +312,13 @@ export function BookingModal({ coach, onClose }: Props) {
             >
               Book Another Session
             </button>
+            <a
+              href="/my-sessions"
+              className="mt-3 text-sm font-semibold text-gold underline-offset-4 hover:underline"
+            >
+              View my sessions &amp; meeting link
+            </a>
+            <p className="mt-1 text-[11px] text-muted-foreground">Sign in with the same account to track this booking.</p>
           </div>
         ) : checkout ? (
           <>
