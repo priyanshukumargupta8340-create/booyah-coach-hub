@@ -122,8 +122,15 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
     setSaving(true);
     const { error } = await supabase.rpc("cancel_booking", { _id: row.id });
     setSaving(false);
-    if (error) setErr(error.message);
-    else onChange();
+    if (error) return setErr(error.message);
+    if (row.coach_handle) {
+      const ch = supabase.channel(`slots-${row.coach_handle.toLowerCase()}`);
+      ch.subscribe((state) => {
+        if (state !== "SUBSCRIBED") return;
+        void ch.send({ type: "broadcast", event: "changed", payload: {} }).finally(() => void supabase.removeChannel(ch));
+      });
+    }
+    onChange();
   }
 
   const cancelled = !!row.cancelled_at;
