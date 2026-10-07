@@ -76,6 +76,8 @@ export type Database = {
       bookings: {
         Row: {
           amount: number | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           coach_handle: string | null
           created_at: string
           free_fire_uid: string
@@ -91,6 +93,8 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           coach_handle?: string | null
           created_at?: string
           free_fire_uid: string
@@ -106,6 +110,8 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           coach_handle?: string | null
           created_at?: string
           free_fire_uid?: string
@@ -207,6 +213,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_booking: { Args: { _id: string }; Returns: undefined }
       get_booked_slots: {
         Args: { _coach: string; _from: string; _to: string }
         Returns: {
