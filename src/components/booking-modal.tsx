@@ -118,9 +118,9 @@ export function BookingModal({ coach, onClose }: Props) {
     setTouched(false);
   }, [coach]);
 
-  const loadBooked = useCallback(async () => {
+  const loadBooked = useCallback(async (silent = false) => {
     if (!coach) return;
-    setSlotsLoading(true);
+    if (!silent) setSlotsLoading(true);
     const { data } = await supabase.rpc("get_booked_slots", {
       _coach: coach.handle,
       _from: next7Days[0]!.value,
@@ -132,6 +132,23 @@ export function BookingModal({ coach, onClose }: Props) {
 
   useEffect(() => {
     if (coach && step === 3) void loadBooked();
+  }, [coach, step, loadBooked]);
+
+  // Live slot updates while the schedule step is open: instant broadcast on cancel + polling fallback.
+  useEffect(() => {
+    if (!coach || step !== 3) return;
+    const channel = supabase
+      .channel(`slots-${coach.handle.toLowerCase()}`)
+      .on("broadcast", { event: "changed" }, () => void loadBooked(true))
+      .subscribe();
+    const timer = window.setInterval(() => void loadBooked(true), 10000);
+    const onFocus = () => void loadBooked(true);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      void supabase.removeChannel(channel);
+    };
   }, [coach, step, loadBooked]);
 
   useEffect(() => {
