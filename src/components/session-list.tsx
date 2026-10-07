@@ -65,7 +65,7 @@ export function SessionList({ mode, filter }: { mode: "player" | "coach"; filter
     );
   if (error) return <p className="mt-6 text-sm text-destructive">{error}</p>;
 
-  const upcoming = rows.filter((r) => r.selected_date >= today() && r.status !== "completed");
+  const upcoming = rows.filter((r) => r.selected_date >= today() && r.status !== "completed" && !r.cancelled_at);
   const past = rows.filter((r) => !upcoming.includes(r)).reverse();
 
   if (rows.length === 0)
@@ -116,6 +116,19 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
     else onChange();
   }
 
+  async function cancel() {
+    if (!window.confirm("Cancel this session? The time slot will be released for other players.")) return;
+    setErr(null);
+    setSaving(true);
+    const { error } = await supabase.rpc("cancel_booking", { _id: row.id });
+    setSaving(false);
+    if (error) setErr(error.message);
+    else onChange();
+  }
+
+  const cancelled = !!row.cancelled_at;
+  const canCancel = !cancelled && row.status !== "completed" && row.selected_date >= today();
+
   return (
     <li className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -129,13 +142,17 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
         </div>
         <div className="flex items-center gap-2">
           {row.amount != null && <span className="font-display text-lg text-gold">₹{row.amount}</span>}
-          <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${STATUS_BADGE[row.status]}`}>
-            {row.status}
+          <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${cancelled ? "border-destructive/40 bg-destructive/10 text-destructive" : STATUS_BADGE[row.status]}`}>
+            {cancelled ? "cancelled" : row.status}
           </span>
         </div>
       </div>
 
-      {mode === "player" ? (
+      {cancelled ? (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Cancelled by {row.cancelled_by === "player" ? (mode === "player" ? "you" : "the player") : row.cancelled_by === "coach" ? (mode === "coach" ? "you" : "the coach") : "an admin"}. This slot is open again.
+        </p>
+      ) : mode === "player" ? (
         row.meeting_link ? (
           <a href={row.meeting_link} target="_blank" rel="noreferrer"
             className="mt-3 inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-bold text-primary-foreground">
@@ -160,6 +177,12 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
               className="rounded-md bg-gold px-3 py-2 text-sm font-bold text-background disabled:opacity-50">Mark completed</button>
           )}
         </div>
+      )}
+      {canCancel && (
+        <button disabled={saving} onClick={() => void cancel()}
+          className="mt-3 rounded-md border border-destructive/50 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50">
+          {saving ? "Cancelling…" : "Cancel session"}
+        </button>
       )}
       {err && <p role="alert" className="mt-2 text-xs text-destructive">{err}</p>}
     </li>
