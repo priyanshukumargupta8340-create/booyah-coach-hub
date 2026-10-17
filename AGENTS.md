@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Cancellation policies are snapshotted on booking creation and enforced through authenticated quote/cancel database functions, so later coach edits cannot change agreed terms.
+- Session timestamps use Asia/Kolkata; booking and cancellation screens explicitly label IST to keep deadline comparisons consistent.
+- Keep cancellation time/fee helpers in src/lib/cancellation-policy.ts with executable rule tests; the database remains authoritative at confirmation.

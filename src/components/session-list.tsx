@@ -4,6 +4,12 @@ import { CalendarDays, ExternalLink, Flame, Loader2, Video } from "lucide-react"
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { CancellationPolicyNotice } from "@/components/cancellation-policy-notice";
+import { readCancellationPolicy, formatPolicyTime } from "@/lib/cancellation-policy";
+
+type CancellationQuote = { allowed: boolean; reason: string | null; fee: number; deadline: string };
 
 type Booking = Database["public"]["Tables"]["bookings"]["Row"];
 type Status = Database["public"]["Enums"]["booking_status"];
@@ -104,6 +110,9 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
   const [link, setLink] = useState(row.meeting_link ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [quoting, setQuoting] = useState(false);
+  const [quote, setQuote] = useState<CancellationQuote | null>(null);
   const date = new Date(`${row.selected_date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
 
   async function save(patch: Database["public"]["Tables"]["bookings"]["Update"]) {
@@ -116,13 +125,29 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
     else onChange();
   }
 
+  async function reviewCancellation() {
+    setCancelOpen(true);
+    setQuote(null);
+    setErr(null);
+    setQuoting(true);
+    const { data, error } = await supabase.rpc("get_cancellation_quote", { _id: row.id });
+    setQuoting(false);
+    if (error) return setErr(error.message);
+    if (!data || typeof data !== "object" || Array.isArray(data) || typeof data.allowed !== "boolean" || typeof data.fee !== "number" || typeof data.deadline !== "string") return setErr("Couldn't check cancellation terms. Please try again.");
+    setQuote({ allowed: data.allowed, fee: data.fee, deadline: data.deadline, reason: typeof data.reason === "string" ? data.reason : null });
+  }
+
   async function cancel() {
-    if (!window.confirm("Cancel this session? The time slot will be released for other players.")) return;
+    if (!quote?.allowed || saving) return;
     setErr(null);
     setSaving(true);
-    const { error } = await supabase.rpc("cancel_booking", { _id: row.id });
+    const { error } = await supabase.rpc("cancel_booking_with_policy", { _id: row.id, _accepted_fee: quote.fee });
     setSaving(false);
-    if (error) return setErr(error.message);
+    if (error) {
+      setQuote(null);
+      return setErr(error.message);
+    }
+    setCancelOpen(false);
     if (row.coach_handle) {
       const ch = supabase.channel(`slots-${row.coach_handle.toLowerCase()}`);
       ch.subscribe((state) => {
@@ -134,7 +159,7 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
   }
 
   const cancelled = !!row.cancelled_at;
-  const canCancel = !cancelled && row.status !== "completed" && row.selected_date >= today();
+  const canCancel = !cancelled && row.status !== "completed" && (row.starts_at ? new Date(row.starts_at).getTime() > Date.now() : row.selected_date >= today());
 
   return (
     <li className="rounded-xl border border-border bg-card p-4">
@@ -158,6 +183,7 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
       {cancelled ? (
         <p className="mt-3 text-xs text-muted-foreground">
           Cancelled by {row.cancelled_by === "player" ? (mode === "player" ? "you" : "the player") : row.cancelled_by === "coach" ? (mode === "coach" ? "you" : "the coach") : "an admin"}. This slot is open again.
+          {row.cancellation_fee > 0 && ` Recorded cancellation fee: ₹${row.cancellation_fee}. No real charge or refund was made.`}
         </p>
       ) : mode === "player" ? (
         row.meeting_link ? (
@@ -186,12 +212,37 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
         </div>
       )}
       {canCancel && (
-        <button disabled={saving} onClick={() => void cancel()}
+        <Button variant="outline" disabled={saving} onClick={() => void reviewCancellation()}
           className="mt-3 rounded-md border border-destructive/50 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-50">
-          {saving ? "Cancelling…" : "Cancel session"}
-        </button>
+          Cancel session
+        </Button>
       )}
-      {err && <p role="alert" className="mt-2 text-xs text-destructive">{err}</p>}
+      {!cancelled && mode === "player" && <CancellationPolicyNotice policy={readCancellationPolicy(row.cancellation_policy)} startsAt={row.starts_at} amount={row.amount ?? 0} />}
+      <AlertDialog open={cancelOpen} onOpenChange={(open) => { if (!saving) setCancelOpen(open); }}>
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this session?</AlertDialogTitle>
+            <AlertDialogDescription>{row.session_type} · {date} · {row.time_slot} IST</AlertDialogDescription>
+          </AlertDialogHeader>
+          {quoting ? <p className="text-sm text-muted-foreground">Checking cancellation terms…</p> : quote && <div className="space-y-2 text-sm">
+            <p className="text-muted-foreground">Free cancellation deadline: {formatPolicyTime(quote.deadline)}</p>
+            {quote.allowed ? <>
+              <p className="font-semibold text-gold">Cancellation fee: ₹{quote.fee}</p>
+              <p className="text-muted-foreground">Your cancellation releases this time slot for other players.</p>
+              <p className="text-xs text-muted-foreground">Payments are simulated. Any fee is recorded only; no money is charged or refunded.</p>
+            </> : <p role="alert" className="font-semibold text-destructive">{quote.reason}</p>}
+          </div>}
+          {err && <p role="alert" className="text-sm text-destructive">{err}</p>}
+          <AlertDialogFooter className="gap-2">
+            <Button variant="outline" disabled={saving} onClick={() => setCancelOpen(false)}>Keep session</Button>
+            {!quote && !quoting && <Button variant="outline" onClick={() => void reviewCancellation()}>Review updated terms</Button>}
+            {quote?.allowed && <Button variant="destructive" disabled={saving} className="h-auto whitespace-normal" onClick={() => void cancel()}>
+              {saving ? "Cancelling…" : quote.fee > 0 ? `Confirm cancellation · ₹${quote.fee} fee` : "Confirm cancellation"}
+            </Button>}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {err && !cancelOpen && <p role="alert" className="mt-2 text-xs text-destructive">{err}</p>}
     </li>
   );
 }

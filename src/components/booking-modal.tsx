@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_CANCELLATION_POLICY, sessionStartsAt, type CancellationPolicy } from "@/lib/cancellation-policy";
+import { CancellationPolicyNotice } from "@/components/cancellation-policy-notice";
 
 export type BookingCoach = {
   name: string;
@@ -29,6 +31,7 @@ export type BookingCoach = {
   /** Weekday ("0"=Sun) -> available slots. Omit for every slot. */
   availability?: Record<string, string[]> | null;
   sessionPrices?: SessionPrices | null;
+  cancellationPolicy?: CancellationPolicy;
 };
 
 export const SESSION_TYPES = [
@@ -119,12 +122,14 @@ export function BookingModal({ coach, onClose }: Props) {
   }, [coach]);
 
   const loadBooked = useCallback(async (silent = false) => {
-    if (!coach) return;
+    const first = next7Days[0];
+    const last = next7Days[next7Days.length - 1];
+    if (!coach || !first || !last) return;
     if (!silent) setSlotsLoading(true);
     const { data } = await supabase.rpc("get_booked_slots", {
       _coach: coach.handle,
-      _from: next7Days[0]!.value,
-      _to: next7Days[next7Days.length - 1]!.value,
+      _from: first.value,
+      _to: last.value,
     });
     setBooked(new Set((data ?? []).map((r) => `${r.selected_date}|${r.time_slot}`)));
     setSlotsLoading(false);
@@ -175,6 +180,8 @@ export function BookingModal({ coach, onClose }: Props) {
   const prices = { ...defaultSessionPrices(coach.price), ...(coach.sessionPrices ?? {}) };
   const sessions = SESSION_TYPES.map((s) => ({ ...s, inr: prices[s.id], usd: Math.max(1, Math.round(prices[s.id] / 85)) }));
   const selectedSession = sessions.find((s) => s.id === sessionType) ?? null;
+  const cancellationPolicy = coach.cancellationPolicy ?? DEFAULT_CANCELLATION_POLICY;
+  const startsAt = date && slot ? sessionStartsAt(date, slot) : null;
 
   const stepValid = [
     /^\d{8,12}$/.test(uid.trim()) && ign.trim().length >= 3 && contact.trim().length >= 5,
@@ -239,9 +246,14 @@ export function BookingModal({ coach, onClose }: Props) {
       time_slot: slot,
       amount: selectedSession.inr,
       status: "paid",
+      cancellation_policy: cancellationPolicy,
     });
     setSaving(false);
     if (error) {
+      if (error.code === "22023") {
+        setSaveError(error.message);
+        return;
+      }
       if (error.code === "23505" || error.code === "P0001") {
         setSlotTaken(true);
         setSlot(null);
@@ -357,6 +369,7 @@ export function BookingModal({ coach, onClose }: Props) {
                 </div>
               </div>
 
+              <CancellationPolicyNotice policy={cancellationPolicy} startsAt={startsAt} amount={selectedSession?.inr ?? 0} />
               <fieldset className="mt-5">
                 <legend className={labelCls}>Payment method</legend>
                 <div className="mt-2 space-y-2">
@@ -719,6 +732,7 @@ export function BookingModal({ coach, onClose }: Props) {
                       </dd>
                     </div>
                   </dl>
+                  <CancellationPolicyNotice policy={cancellationPolicy} startsAt={startsAt} amount={selectedSession?.inr ?? 0} />
                   <p className="mt-3 text-[11px] text-muted-foreground">
                     You’ll choose a payment method on the secure checkout screen before the booking is saved.
                   </p>
