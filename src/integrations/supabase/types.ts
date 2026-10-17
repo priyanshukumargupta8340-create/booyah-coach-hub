@@ -76,6 +76,8 @@ export type Database = {
       bookings: {
         Row: {
           amount: number | null
+          cancellation_fee: number
+          cancellation_policy: Json | null
           cancelled_at: string | null
           cancelled_by: string | null
           coach_handle: string | null
@@ -86,6 +88,7 @@ export type Database = {
           meeting_link: string | null
           selected_date: string
           session_type: string
+          starts_at: string | null
           status: Database["public"]["Enums"]["booking_status"]
           time_slot: string
           user_id: string | null
@@ -93,6 +96,8 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          cancellation_fee?: number
+          cancellation_policy?: Json | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           coach_handle?: string | null
@@ -103,6 +108,7 @@ export type Database = {
           meeting_link?: string | null
           selected_date: string
           session_type: string
+          starts_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           time_slot: string
           user_id?: string | null
@@ -110,6 +116,8 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          cancellation_fee?: number
+          cancellation_policy?: Json | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           coach_handle?: string | null
@@ -120,6 +128,7 @@ export type Database = {
           meeting_link?: string | null
           selected_date?: string
           session_type?: string
+          starts_at?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           time_slot?: string
           user_id?: string | null
@@ -131,6 +140,7 @@ export type Database = {
         Row: {
           availability: Json
           bio: string
+          cancellation_policy: Json
           created_at: string
           display_name: string
           free_fire_uid: string
@@ -150,6 +160,7 @@ export type Database = {
         Insert: {
           availability?: Json
           bio: string
+          cancellation_policy?: Json
           created_at?: string
           display_name: string
           free_fire_uid: string
@@ -169,6 +180,7 @@ export type Database = {
         Update: {
           availability?: Json
           bio?: string
+          cancellation_policy?: Json
           created_at?: string
           display_name?: string
           free_fire_uid?: string
@@ -214,6 +226,10 @@ export type Database = {
     }
     Functions: {
       cancel_booking: { Args: { _id: string }; Returns: undefined }
+      cancel_booking_with_policy: {
+        Args: { _accepted_fee?: number; _id: string }
+        Returns: undefined
+      }
       get_booked_slots: {
         Args: { _coach: string; _from: string; _to: string }
         Returns: {
@@ -221,6 +237,7 @@ export type Database = {
           time_slot: string
         }[]
       }
+      get_cancellation_quote: { Args: { _id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
