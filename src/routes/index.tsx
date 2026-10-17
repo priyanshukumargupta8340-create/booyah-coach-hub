@@ -21,6 +21,7 @@ import {
 
 import heroSquad from "@/assets/hero-squad.jpg";
 import { BookingModal, type SessionPrices } from "@/components/booking-modal";
+import { readCancellationPolicy, type CancellationPolicy } from "@/lib/cancellation-policy";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,6 +33,8 @@ export const Route = createFileRoute("/")({
           "Find verified Free Fire and Free Fire MAX coaches for rank push, aim training, IGL strategy and tournament prep. Sessions from ₹149.",
       },
       { property: "og:title", content: "BooyahCoach — Book Verified Free Fire Coaches" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content:
@@ -92,6 +95,7 @@ type Coach = {
   isNew?: boolean;
   availability?: Record<string, string[]> | null;
   sessionPrices?: SessionPrices | null;
+  cancellationPolicy?: CancellationPolicy;
 };
 
 const COACHES: Coach[] = [
@@ -193,7 +197,7 @@ function Home() {
   useEffect(() => {
     void supabase
       .from("coach_profiles")
-      .select("display_name, handle, rank, region, languages, price, specialties, bio, availability, session_prices")
+      .select("display_name, handle, rank, region, languages, price, specialties, bio, availability, session_prices, cancellation_policy")
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
@@ -214,6 +218,7 @@ function Home() {
             isNew: true,
             availability: (c.availability ?? null) as Record<string, string[]> | null,
             sessionPrices: (c.session_prices ?? null) as SessionPrices | null,
+            cancellationPolicy: readCancellationPolicy(c.cancellation_policy),
           })),
         );
       });

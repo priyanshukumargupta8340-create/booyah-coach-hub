@@ -4,6 +4,8 @@ import { BadgeCheck, Clock, Flame, Loader2, Upload, XCircle } from "lucide-react
 
 import { supabase } from "@/integrations/supabase/client";
 import { SESSION_TYPES, TIME_SLOTS, type SessionPrices } from "@/components/booking-modal";
+import { readCancellationPolicy, DEFAULT_CANCELLATION_POLICY } from "@/lib/cancellation-policy";
+import { CancellationPolicyNotice } from "@/components/cancellation-policy-notice";
 
 const WEEKDAYS = [["1", "Mon"], ["2", "Tue"], ["3", "Wed"], ["4", "Thu"], ["5", "Fri"], ["6", "Sat"], ["0", "Sun"]] as const;
 import type { Database } from "@/integrations/supabase/types";
@@ -48,6 +50,7 @@ function BecomeCoachPage() {
     price: "199",
     session_prices: { vod: "199", scrim: "399", aim: "299" } as Record<keyof SessionPrices, string>,
     bio: "",
+    cancellation_policy: DEFAULT_CANCELLATION_POLICY,
     specialties: [] as string[],
     availability: Object.fromEntries(["0", "1", "2", "3", "4", "5", "6"].map((d) => [d, [...TIME_SLOTS]])) as Record<string, string[]>,
   });
@@ -62,7 +65,7 @@ function BecomeCoachPage() {
         if (data) {
           setExisting(data);
           const sp = (data.session_prices ?? {}) as Partial<SessionPrices>;
-          setForm({ ...data, price: String(data.price), session_prices: { vod: String(sp.vod ?? 199), scrim: String(sp.scrim ?? 399), aim: String(sp.aim ?? 299) }, availability: (data.availability ?? {}) as Record<string, string[]> });
+          setForm({ ...data, cancellation_policy: readCancellationPolicy(data.cancellation_policy), price: String(data.price), session_prices: { vod: String(sp.vod ?? 199), scrim: String(sp.scrim ?? 399), aim: String(sp.aim ?? 299) }, availability: (data.availability ?? {}) as Record<string, string[]> });
         }
         setLoading(false);
       });
@@ -80,6 +83,8 @@ function BecomeCoachPage() {
     if (Object.values(session_prices).some((v) => !Number.isInteger(v) || v < 49 || v > 5000))
       return setError("Each session price must be between ₹49 and ₹5000.");
     const price = Math.min(...Object.values(session_prices));
+    if (!Number.isInteger(form.cancellation_policy.hours) || form.cancellation_policy.hours < 0 || form.cancellation_policy.hours > 168 || !Number.isInteger(form.cancellation_policy.fee_percent) || form.cancellation_policy.fee_percent < 0 || form.cancellation_policy.fee_percent > 100)
+      return setError("Set a deadline from 0–168 hours and a fee from 0–100%.");
     if (!Object.values(form.availability).some((v) => v.length > 0)) return setError("Open at least one time slot in your weekly availability.");
     if (!file && !existing) return setError("Upload a screenshot of your rank as proof.");
     if (file && (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024))
@@ -108,6 +113,7 @@ function BecomeCoachPage() {
       bio: form.bio.trim(),
       specialties: form.specialties,
       availability: form.availability,
+      cancellation_policy: form.cancellation_policy,
       proof_path,
     };
     const { data, error: dbErr } = existing
@@ -225,6 +231,28 @@ function BecomeCoachPage() {
               </div>
             </fieldset>
 
+            <fieldset className="border-t border-border pt-4">
+              <legend className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Cancellation policy</legend>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <Field label="Free cancellation deadline (hours before session)">
+                  <input required type="number" min={0} max={168} step={1} className={input} value={form.cancellation_policy.hours}
+                    onChange={(e) => setForm((f) => ({ ...f, cancellation_policy: { ...f.cancellation_policy, hours: e.target.valueAsNumber } }))} />
+                </Field>
+                <Field label="After the deadline">
+                  <select className={input} value={form.cancellation_policy.late_action}
+                    onChange={(e) => setForm((f) => ({ ...f, cancellation_policy: { ...f.cancellation_policy, late_action: e.target.value === "block" ? "block" : "fee" } }))}>
+                    <option value="fee">Allow cancellation with a fee</option>
+                    <option value="block">Do not allow cancellation</option>
+                  </select>
+                </Field>
+                {form.cancellation_policy.late_action === "fee" && <Field label="Late cancellation fee (%)">
+                  <input required type="number" min={0} max={100} step={1} className={input} value={form.cancellation_policy.fee_percent}
+                    onChange={(e) => setForm((f) => ({ ...f, cancellation_policy: { ...f.cancellation_policy, fee_percent: e.target.valueAsNumber } }))} />
+                </Field>}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">New bookings use these terms after approval. Existing bookings keep their original policy.</p>
+            </fieldset>
+
             <Field label="Bio">
               <textarea required maxLength={300} rows={3} placeholder="What makes your coaching different?" className={input} value={form.bio} onChange={set("bio")} />
             </Field>
@@ -289,6 +317,7 @@ function StatusCard({ profile, onEdit }: { profile: CoachProfile; onEdit: () => 
           <Link to="/" hash="coaches" className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">View directory</Link>
         )}
       </div>
+      <CancellationPolicyNotice policy={readCancellationPolicy(profile.cancellation_policy)} amount={profile.price} />
     </div>
   );
 }
