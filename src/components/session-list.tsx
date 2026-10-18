@@ -133,8 +133,8 @@ function SessionCard({ row, mode, onChange }: { row: Booking; mode: "player" | "
     const { data, error } = await supabase.rpc("get_cancellation_quote", { _id: row.id });
     setQuoting(false);
     if (error) return setErr(error.message);
-    if (!data || typeof data !== "object" || Array.isArray(data) || typeof data.allowed !== "boolean" || typeof data.fee !== "number" || typeof data.deadline !== "string") return setErr("Couldn't check cancellation terms. Please try again.");
-    setQuote({ allowed: data.allowed, fee: data.fee, deadline: data.deadline, reason: typeof data.reason === "string" ? data.reason : null });
+    if (!data || typeof data !== "object" || Array.isArray(data) || typeof data['allowed'] !== "boolean" || typeof data['fee'] !== "number" || typeof data['deadline'] !== "string") return setErr("Couldn't check cancellation terms. Please try again.");
+    setQuote({ allowed: data['allowed'], fee: data['fee'], deadline: data['deadline'], reason: typeof data['reason'] === "string" ? data['reason'] : null });
   }
 
   async function cancel() {
